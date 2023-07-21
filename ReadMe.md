@@ -1,6 +1,6 @@
 # Usage
 
-Begin by using the provided Python script (trt_python_version.py)
+Please Begin by using the provided Python script (`trt_python_version.py`)
 to generate the TensorRT engine file. This is necessary because
 our current C++ application does not possess the capability to
 create this engine file independently. The codes have been written
