@@ -3,8 +3,10 @@
 Please Begin by using the provided Python script (`trt_python_version.py`)
 to generate the TensorRT engine file. This is necessary because
 our current C++ application does not possess the capability to
-create this engine file independently. The codes have been written
-in a simplified manner to facilitate comprehension and reproduction
+create this engine file independently. After that the engine has been created
+you can run the cmake and it will copy the engine file beside of the exe file to use it.
+
+The codes have been written in a simplified manner to facilitate comprehension and reproduction
 by anyone. After the engine file has been created with Python,
 we will then utilize this file in our C++ application.
 
