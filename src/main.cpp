@@ -9,8 +9,9 @@ using namespace nvinfer1;
 // Simple Logger for TensorRT
 class Logger : public nvinfer1::ILogger {
 public:
-    void log(Severity severity, const char *msg) noexcept override{
-
+    void log(Severity severity, const char *msg) noexcept override {
+        // suppress info-level messages
+        std::cout << msg << std::endl;
     }
 } gLogger;
 
@@ -34,8 +35,8 @@ int main() {
     // Allocate memory on the GPU for the input and output data
     float *input_data;
     float *output_data;
-    int input_size = 1 * 112 * 112 * 3; // As per your Python code
-    int output_size = 512; // You need to set the output size here
+    int input_size = 1 * 112 * 112 * 3;
+    int output_size = 512;
     cudaMalloc((void **) &input_data, input_size * sizeof(float));
     cudaMalloc((void **) &output_data, output_size * sizeof(float));
 
