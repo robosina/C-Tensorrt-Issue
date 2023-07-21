@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.18)
-project(TensorrtIssueCheck)
+project(TensorrtIssueCheck LANGUAGES CXX CUDA)
 
 # TODO: Specify the path to TensorRT root dir
 if (NOT TensorRT_DIR)
-    set(TensorRT_DIR C:/TensorRT-8.4.3.1)
+    set(TensorRT_DIR C:/SMS_prerequisite/TensorRT-8.6.0.12)
 endif ()
 
 set(SERIALIZED_ENGINE_FILE "${CMAKE_SOURCE_DIR}/Data/Example.engine")
@@ -29,7 +29,7 @@ set(CUDA_TOOLKIT_ROOT_DIR C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11
 find_package(TensorRT REQUIRED)
 find_package(CUDA REQUIRED)
 
-add_executable(cpp_version src/main.cpp)
+add_executable(cpp_version src/main.cu)
 target_include_directories(cpp_version PUBLIC  ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
 target_link_libraries(cpp_version PUBLIC ${CUDA_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${TensorRT_LIBRARIES})
 add_custom_command(TARGET cpp_version POST_BUILD

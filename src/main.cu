@@ -3,8 +3,32 @@
 #include <NvInfer.h>
 #include <cuda_runtime_api.h>
 #include "NvOnnxParser.h"
+#include <thrust/device_ptr.h>
+#include <thrust/fill.h>
+#define THRUST_DEVICE_SYSTEM THRUST_DEVICE_SYSTEM_CUDA
+#include <thrust/device_vector.h>
+#include <thrust/fill.h>
 
+//cuda headers
+#include <cuda_runtime.h>
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 using namespace nvinfer1;
+
+// CUDA Kernel to fill an array with a specific value
+__global__ void fillKernel(float* devPtr, const float val, const int N) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < N)
+        devPtr[idx] = val;
+}
+
+// Function to launch the kernel
+void fillWith(float* devPtr, float val, int N) {
+    int blockSize = 256;
+    int numBlocks = (N + blockSize - 1) / blockSize;
+    fillKernel<<<numBlocks, blockSize>>>(devPtr, val, N);
+    cudaDeviceSynchronize();
+}
 
 // Simple Logger for TensorRT
 class Logger : public nvinfer1::ILogger {
@@ -36,23 +60,32 @@ int main() {
     float *input_data;
     float *output_data;
     int input_size = 1 * 112 * 112 * 3;
-    int output_size = 512;
+    int output_size = 512;  // adjust according to your network's output size
     cudaMalloc((void **) &input_data, input_size * sizeof(float));
     cudaMalloc((void **) &output_data, output_size * sizeof(float));
 
     // Set the input data
     float input_value = -0.99609375;
-    cudaMemset(input_data, input_value, input_size * sizeof(float));
+    thrust::device_ptr<float> th_input_data(input_data);
+    thrust::fill(th_input_data, th_input_data + input_size, input_value);
 
     // Set up the execution bindings
     void *bindings[2] = {input_data, output_data};
 
-    // Run inference
-    context->executeV2(bindings);
+    // Prepare for async transfer
+    float *host_output;
+    cudaHostAlloc((void**)&host_output, output_size * sizeof(float), cudaHostAllocDefault);
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
 
-    // Copy the output data back to the host
-    float *host_output = new float[output_size];
-    cudaMemcpy(host_output, output_data, output_size * sizeof(float), cudaMemcpyDeviceToHost);
+    // Run inference
+    context->enqueueV2(bindings, stream, nullptr);
+
+    // Copy the output data back to the host asynchronously
+    cudaMemcpyAsync(host_output, output_data, output_size * sizeof(float), cudaMemcpyDeviceToHost, stream);
+
+    // Wait for stream to finish
+    cudaStreamSynchronize(stream);
 
     // Print the output data
     for (int i = 0; i < 10; ++i) {
@@ -61,9 +94,10 @@ int main() {
     std::cout << std::endl;
 
     // Clean up
+    cudaStreamDestroy(stream);
+    cudaFreeHost(host_output);
     cudaFree(input_data);
     cudaFree(output_data);
-    delete[] host_output;
     context->destroy();
     engine->destroy();
     runtime->destroy();

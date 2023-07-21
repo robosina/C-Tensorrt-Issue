@@ -1,5 +1,8 @@
 import os.path
 
+# add a path to search list
+import sys
+sys.path.append('C:/SMS_prerequisite/TensorRT-8.6.0.12/lib')
 import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
