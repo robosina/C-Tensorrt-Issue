@@ -48,7 +48,7 @@ if __name__ == '__main__':
             engine = runtime.deserialize_cuda_engine(f.read())
 
     # data feed, I've supposed that all of the image pixels after preprocessing is -0.99609375
-    image = np.ones((1, 112, 112, 3), np.float32) * -0.99609375
+    image = np.ones((1, 112, 112, 3), np.float32) * -0.49609375
 
     # Run the inference.
     with engine.create_execution_context() as context:

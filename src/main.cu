@@ -60,32 +60,26 @@ int main() {
     float *input_data;
     float *output_data;
     int input_size = 1 * 112 * 112 * 3;
-    int output_size = 512;  // adjust according to your network's output size
+    int output_size = 512;
     cudaMalloc((void **) &input_data, input_size * sizeof(float));
     cudaMalloc((void **) &output_data, output_size * sizeof(float));
 
     // Set the input data
-    float input_value = -0.99609375;
+    float input_value = -0.49609375;
+//    cudaMemset(input_data, input_value, input_size * sizeof(float));
+
     thrust::device_ptr<float> th_input_data(input_data);
     thrust::fill(th_input_data, th_input_data + input_size, input_value);
 
     // Set up the execution bindings
     void *bindings[2] = {input_data, output_data};
 
-    // Prepare for async transfer
-    float *host_output;
-    cudaHostAlloc((void**)&host_output, output_size * sizeof(float), cudaHostAllocDefault);
-    cudaStream_t stream;
-    cudaStreamCreate(&stream);
-
     // Run inference
-    context->enqueueV2(bindings, stream, nullptr);
+    context->executeV2(bindings);
 
-    // Copy the output data back to the host asynchronously
-    cudaMemcpyAsync(host_output, output_data, output_size * sizeof(float), cudaMemcpyDeviceToHost, stream);
-
-    // Wait for stream to finish
-    cudaStreamSynchronize(stream);
+    // Copy the output data back to the host
+    float *host_output = new float[output_size];
+    cudaMemcpy(host_output, output_data, output_size * sizeof(float), cudaMemcpyDeviceToHost);
 
     // Print the output data
     for (int i = 0; i < 10; ++i) {
@@ -94,10 +88,9 @@ int main() {
     std::cout << std::endl;
 
     // Clean up
-    cudaStreamDestroy(stream);
-    cudaFreeHost(host_output);
     cudaFree(input_data);
     cudaFree(output_data);
+    delete[] host_output;
     context->destroy();
     engine->destroy();
     runtime->destroy();
